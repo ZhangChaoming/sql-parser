@@ -20,3 +20,15 @@ target_include_directories(
     sql-parser
     PUBLIC ${CMAKE_CURRENT_LIST_DIR}/src
 )
+
+set(SQL_PARSER_CMAKE_DIR ${CMAKE_INSTALL_LIBDIR}/cmake/quill CACHE STRING
+       "Installation directory for cmake files, relative to ${CMAKE_INSTALL_PREFIX}.")
+set(SQL_PARSER_LIB_DIR ${CMAKE_INSTALL_LIBDIR} CACHE STRING
+       "Installation directory for libraries, relative to ${CMAKE_INSTALL_PREFIX}.")
+set(SQL_PARSER_INC_DIR ${CMAKE_INSTALL_INCLUDEDIR} CACHE STRING
+       "Installation directory for include files, relative to ${CMAKE_INSTALL_PREFIX}.")
+
+install(TARGETS sql-parser EXPORT sql-parser
+            LIBRARY DESTINATION ${SQL_PARSER_LIB_DIR}
+            ARCHIVE DESTINATION ${SQL_PARSER_LIB_DIR}
+            RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
