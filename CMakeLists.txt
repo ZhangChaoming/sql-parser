@@ -7,7 +7,6 @@ add_library(
     ""
 )
 
-
 file(GLOB SQL_SRC ${CMAKE_CURRENT_LIST_DIR}/src/sql/*.cpp)
 file(GLOB SQL_HDRS ${CMAKE_CURRENT_LIST_DIR}/src/sql/*.h)
 
@@ -16,6 +15,7 @@ target_sources(
 PUBLIC
     src/parser/bison_parser.cpp
     src/parser/flex_lexer.cpp
+
     src/util/sqlhelper.cpp
     src/SQLParser.cpp
     src/SQLParserResult.cpp
@@ -69,4 +69,3 @@ FILES
     ${CMAKE_CURRENT_LIST_DIR}/src/SQLParserResult.h
 DESTINATION ${CMAKE_INSTALL_PREFIX}/include
 )
-
