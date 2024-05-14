@@ -6,6 +6,7 @@
 
 #include <ostream>
 #include <unordered_set>
+#include <unordered_map>
 
 // Note: Implementations of constructors and destructors can be found in statements.cpp.
 namespace hsql {
@@ -78,6 +79,8 @@ struct CreateStatement : SQLStatement {
   std::vector<ColumnDefinition*>* columns;          // default: nullptr
   std::vector<TableConstraint*>* tableConstraints;  // default: nullptr
   std::vector<char*>* viewColumns;
+  std::vector<char*>* partitionKeys;
+  std::unordered_map<char*, char*>* options;
   SelectStatement* select;
 };
 

@@ -510,26 +510,14 @@ show_statement : SHOW TABLES { $$ = new ShowStatement(kShowTables); }
 /******************************
  * Create Statement
  * CREATE TABLE students (name TEXT, student_number INTEGER, city TEXT, grade DOUBLE)
- * CREATE TABLE students FROM TBL FILE 'test/students.tbl'
  ******************************/
-create_statement : CREATE TABLE opt_not_exists table_name FROM IDENTIFIER FILE file_path {
-  $$ = new CreateStatement(kCreateTableFromTbl);
-  $$->ifNotExists = $3;
-  $$->schema = $4.schema;
-  $$->tableName = $4.name;
-  if (strcasecmp($6, "tbl") != 0) {
-    free($6);
-    yyerror(&yyloc, result, scanner, "File type is unknown.");
-    YYERROR;
-  }
-  free($6);
-  $$->filePath = $8;
-}
-| CREATE TABLE opt_not_exists table_name '(' table_elem_commalist ')' {
+CREATE TABLE opt_not_exists table_name '(' table_elem_commalist ')' opt_partition opt_with {
   $$ = new CreateStatement(kCreateTable);
   $$->ifNotExists = $3;
   $$->schema = $4.schema;
   $$->tableName = $4.name;
+  $$->partitionKeys = $8;
+  $$->options = $9;
   $$->setColumnDefsAndConstraints($6);
   delete $6;
   if (result->errorMsg()) {
@@ -543,13 +531,6 @@ create_statement : CREATE TABLE opt_not_exists table_name FROM IDENTIFIER FILE f
   $$->schema = $4.schema;
   $$->tableName = $4.name;
   $$->select = $6;
-}
-| CREATE INDEX opt_not_exists opt_index_name ON table_name '(' ident_commalist ')' {
-  $$ = new CreateStatement(kCreateIndex);
-  $$->indexName = $4;
-  $$->ifNotExists = $3;
-  $$->tableName = $6.name;
-  $$->indexColumns = $8;
 }
 | CREATE VIEW opt_not_exists table_name opt_column_list AS select_statement {
   $$ = new CreateStatement(kCreateView);
@@ -630,6 +611,44 @@ column_constraint : PRIMARY KEY { $$ = ConstraintType::PrimaryKey; }
 
 table_constraint : PRIMARY KEY '(' ident_commalist ')' { $$ = new TableConstraint(ConstraintType::PrimaryKey, $4); }
 | UNIQUE '(' ident_commalist ')' { $$ = new TableConstraint(ConstraintType::Unique, $3); };
+
+opt_partition : PARTITION BY '(' opt_partition_keys ')' { $$ = $4; }
+| /* empty */ { $$ = nullptr; };
+
+opt_partition_keys:
+  opt_partition_key {
+    $$ = new std::vector<char*>();
+    $$->emplace_back($1);
+  }
+| opt_partition_keys ',' opt_partition_key {
+    $1->emplace_back($$3);
+    $$ = $1;
+};
+
+opt_with : WITH '(' opt_with_kvs ')' { $$ = $3; }
+| /* empty */ { $$ = nullptr; };
+
+opt_with_kvs:
+    opt_with_kv {
+      $$ = new std::unordered_map<char*, char*>();
+      $$->emplace_back({$1->key, $1->value});
+    }
+  | opt_with_kvs ',' opt_with_kv {
+      $1->emplace_back({$3->key, $3->value});
+      $$ = $1;
+  };
+
+opt_with_kv:
+		string_literal '=' string_literal {
+			$$.key = $1->name;
+			$1->name = nullptr;
+			delete $1;
+
+			$$.value = $3->name;
+			$3->name = nullptr;
+			delete $3;
+		}
+	;
 
 /******************************
  * Drop Statement
@@ -1180,6 +1199,9 @@ table_name : IDENTIFIER {
 };
 
 opt_index_name : IDENTIFIER { $$ = $1; }
+| /* empty */ { $$ = nullptr; };
+
+opt_partition_key : IDENTIFIER { $$ = $1; }
 | /* empty */ { $$ = nullptr; };
 
 table_alias : alias | AS IDENTIFIER '(' ident_commalist ')' { $$ = new Alias($2, $4); };
